@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Membres et Cotisations</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+ <link rel="icon" type="image/x-icon" href="https://i.postimg.cc/nhXPNDZM/SN-(1).png">
+<link rel="apple-touch-icon" href="https://i.postimg.cc/nhXPNDZM/SN-(1).png">
+<link rel="manifest" href="/mouhidine/manifest.json">
+
+ <meta name="theme-color" content="#3B82F6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="COTISATION">
+    <style>
+        :root {
+            --primary-color: #073332;
+            --secondary-color: #1f4a49;
+            --accent-color: #9b9c28;
+            --bg-color: #073332;
+            --text-color: #ffffff;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        body.dark-mode {
+            --bg-color: #073332;
+            --text-color: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(9, 53, 51, 0.7) 0%, transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(31, 74, 73, 0.7) 0%, transparent 25%),
+                radial-gradient(circle at 50% 80%, rgba(155, 156, 40, 0.4) 0%, transparent 25%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: var(--accent-color);
+        }
+
+        .header p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .search-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        .search-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            font-size: 1rem;
+            backdrop-filter: blur(5px);
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .cta-button {
+            padding: 12px 25px;
+            background: var(--accent-color);
+            color: var(--primary-color);
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .cta-button:hover {
+            background: #b3b43a;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .cta-button.danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .cta-button.danger:hover {
+            background: #c0392b;
+        }
+
+        .members-section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 1.6rem;
+            margin-bottom: 15px;
+            color: var(--accent-color);
+            text-align: center;
+        }
+
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .member-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            padding: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .member-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .member-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--accent-color);
+        }
+
+        .member-code {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .member-role {
+            font-size: 0.8rem;
+            background: rgba(155, 156, 40, 0.2);
+            padding: 4px 8px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .contribution-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .contribution-card p {
+            margin-bottom: 8px;
+        }
+
+        .contribution-date {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .back-button {
+            margin-bottom: 15px;
+        }
+
+        .contribution-year {
+            margin-bottom: 20px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .contribution-year h4 {
+            margin-bottom: 12px;
+            color: var(--accent-color);
+            font-size: 1.1rem;
+        }
+
+        .month-checkbox {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 6px 0;
+        }
+
+        .month-checkbox input {
+            margin-right: 8px;
+            transform: scale(1.2);
+        }
+
+        .month-checkbox label {
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .search-container {
+                flex-direction: column;
+            }
+            
+            .members-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Page principale avec liste des membres -->
+        <div id="members-page" class="page active">
+            <div class="header">
+                <h1>Gestion des Cotisations</h1>
+                <p>Espace réservé aux trésoriers</p>
+            </div>
+            
+            <div class="search-section">
+                <div class="search-container">
+                    <input type="text" id="member-search" class="search-input" placeholder="Rechercher par nom ou code...">
+                    <button id="search-button" class="cta-button">
+                        <span class="material-icons">search</span>
+                        Rechercher
+                    </button>
+                </div>
+            </div>
+            
+            <div class="members-section">
+                <h2 class="section-title">Liste des Membres</h2>
+                <div id="members-list" class="members-grid">
+                    <!-- Les membres seront chargés ici dynamiquement -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Page de gestion des cotisations -->
+        <div id="contributions-page" class="page">
+            <button class="cta-button back-button" onclick="showPage('members-page')">
+                <span class="material-icons">arrow_back</span>
+                Retour à la liste
+            </button>
+            
+            <div class="header">
+                <h2 id="member-contributions-title">Cotisations de [Membre]</h2>
+                <p>Gestion des paiements de cotisations mensuelles</p>
+            </div>
+            
+            <div id="contributions-content">
+                <!-- Le contenu des cotisations sera chargé ici dynamiquement -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyA-TpblN0YnekG2tKFRhjOwwEd80qke5pk",
+            authDomain: "ansar-69617.firebaseapp.com",
+            projectId: "ansar-69617",
+            storageBucket: "ansar-69617.firebasestorage.app",
+            messagingSenderId: "1075104578958",
+            appId: "1:1075104578958:web:b5d55c76def4d1d430b8df",
+            measurementId: "G-5XLSPLXH81"
+        };
+
+        // Initialiser Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // Authentification anonyme
+        auth.signInAnonymously().catch(error => {
+            console.error('Erreur lors de l\'authentification anonyme:', error);
+        });
+
+        // Variables globales
+        let currentMember = null;
+        const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+        const years = ['2023', '2024', '2025'];
+
+        // Fonctions de base pour Firestore
+        async function loadData(collection) {
+            try {
+                const snapshot = await db.collection(collection).get();
+                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (error) {
+                console.error(`Erreur lors du chargement de ${collection}:`, error);
+                throw error;
+            }
+        }
+
+        async function saveData(collection, data, docId = null) {
+            try {
+                if (docId) {
+                    await db.collection(collection).doc(docId).set(data, { merge: true });
+                } else {
+                    await db.collection(collection).add(data);
+                }
+                return true;
+            } catch (error) {
+                console.error(`Erreur saveData(${collection}):`, error);
+                alert(`Erreur de sauvegarde: ${error.message}`);
+                return false;
+            }
+        }
+
+        // Initialisation au chargement de la page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Charger les membres
+            updateMembersList();
+            
+            // Ajouter les écouteurs d'événements
+            document.getElementById('search-button').addEventListener('click', updateMembersList);
+            document.getElementById('member-search').addEventListener('input', updateMembersList);
+            document.getElementById('member-search').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    updateMembersList();
+                }
+            });
+        });
+
+        // Afficher une page et masquer les autres
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        // Mettre à jour la liste des membres
+        async function updateMembersList() {
+            try {
+                const members = await loadData('members');
+                const searchTerm = document.getElementById('member-search').value.toLowerCase();
+                const membersList = document.getElementById('members-list');
+                
+                // Filtrer les membres selon la recherche
+                const filteredMembers = members.filter(member => 
+                    member.firstname.toLowerCase().includes(searchTerm) ||
+                    member.lastname.toLowerCase().includes(searchTerm) ||
+                    member.code.toLowerCase().includes(searchTerm)
+                );
+                
+                // Afficher les membres
+               // Trier les membres par code en ordre croissant
+const sortedMembers = filteredMembers.sort((a, b) => {
+    return parseInt(a.code) - parseInt(b.code);
+});
+
+// Afficher les membres
+membersList.innerHTML = sortedMembers.map(member => `
+    <div class="member-card" onclick="showMemberContributions('${member.id}', '${member.firstname} ${member.lastname}')">
+        <div class="member-name">${member.firstname} ${member.lastname}</div>
+        <div class="member-code">Code: ${member.code}</div>
+        <div class="member-role">${member.role || 'Membre'}</div>
+    </div>
+`).join('') || '<p>Aucun membre trouvé</p>';
+            } catch (error) {
+                console.error('Erreur lors du chargement des membres:', error);
+                document.getElementById('members-list').innerHTML = '<p>Erreur lors du chargement des membres</p>';
+            }
+        }
+
+        // Afficher les cotisations d'un membre
+        async function showMemberContributions(memberId, memberName) {
+            try {
+                currentMember = memberId;
+                
+                // Mettre à jour le titre
+                document.getElementById('member-contributions-title').textContent = `Cotisations de ${memberName}`;
+                
+                // Charger les données du membre
+                const members = await loadData('members');
+                const member = members.find(m => m.id === memberId);
+                
+                if (!member) {
+                    alert('Membre introuvable');
+                    return;
+                }
+                
+                // Initialiser les cotisations si elles n'existent pas
+                if (!member.contributions) {
+                    member.contributions = initializeContributions();
+                }
+                
+                // Vérifier si Mensuelle existe
+                if (!member.contributions.Mensuelle) {
+                    member.contributions.Mensuelle = initializeMensuelle();
+                }
+                
+                // Générer le contenu des cotisations
+                const contributionsContent = document.getElementById('contributions-content');
+                contributionsContent.innerHTML = `
+                    <form id="member-contributions-form">
+                        ${years.map(year => {
+                            // Vérifier si l'année existe dans Mensuelle
+                            const yearData = member.contributions.Mensuelle[year] || Array(12).fill(false);
+                            
+                            return `
+                                <div class="contribution-year">
+                                    <h4>${year}</h4>
+                                    ${months.map((month, index) => {
+                                        const isPaid = yearData[index] || false;
+                                        return `
+                                            <div class="month-checkbox">
+                                                <input type="checkbox" id="month-${year}-${index}" 
+                                                       data-year="${year}" data-month="${index}" 
+                                                       ${isPaid ? 'checked' : ''}>
+                                                <label for="month-${year}-${index}">${month}</label>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            `;
+                        }).join('')}
+                        <button type="submit" class="cta-button">Enregistrer les modifications</button>
+                    </form>
+                `;
+                
+                // Ajouter l'écouteur d'événement pour le formulaire
+                document.getElementById('member-contributions-form').addEventListener('submit', saveMemberContributions);
+                
+                // Ajouter l'écouteur d'événement pour chaque case à cocher
+                document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        // Enregistrement automatique lorsqu'une case est cochée/décochée
+                        saveMemberContributions();
+                    });
+                });
+                
+                // Afficher la page des cotisations
+                showPage('contributions-page');
+            } catch (error) {
+                console.error('Erreur lors du chargement des cotisations:', error);
+                alert('Erreur lors du chargement des cotisations');
+            }
+        }
+
+        // Initialiser les cotisations avec la structure correcte
+        function initializeContributions() {
+            return {
+                Mensuelle: initializeMensuelle(),
+                globalContributions: {}
+            };
+        }
+
+        // Initialiser la structure Mensuelle
+        function initializeMensuelle() {
+            const mensuelle = {};
+            years.forEach(year => {
+                mensuelle[year] = Array(12).fill(false);
+            });
+            return mensuelle;
+        }
+
+        // Sauvegarder les cotisations d'un membre
+        async function saveMemberContributions(e) {
+            if (e) e.preventDefault();
+            
+            try {
+                if (!currentMember) {
+                    alert('Aucun membre sélectionné');
+                    return;
+                }
+                
+                // Récupérer l'état des cases à cocher
+                const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+                const mensuelle = initializeMensuelle();
+                
+                checkboxes.forEach(checkbox => {
+                    const year = checkbox.dataset.year;
+                    const month = parseInt(checkbox.dataset.month);
+                    mensuelle[year][month] = checkbox.checked;
+                });
+                
+                // Charger les données actuelles du membre pour préserver globalContributions
+                const members = await loadData('members');
+                const currentMemberData = members.find(m => m.id === currentMember);
+                
+                // Préparer les données à sauvegarder
+                const contributionsData = {
+                    contributions: {
+                        Mensuelle: mensuelle,
+                        globalContributions: currentMemberData?.contributions?.globalContributions || {}
+                    }
+                };
+                
+                // Sauvegarder dans Firestore
+                await saveData('members', contributionsData, currentMember);
+                
+                // Afficher un message de confirmation (sauf si déclenché automatiquement)
+                if (!e) {
+                    // Message silencieux pour l'enregistrement automatique
+                    console.log('Cotisations mises à jour automatiquement');
+                } else {
+                    alert('Cotisations enregistrées avec succès');
+                }
+            } catch (error) {
+                console.error('Erreur lors de la sauvegarde des cotisations:', error);
+                alert('Erreur lors de la sauvegarde des cotisations');
+            }
+        }
+    </script>
+</body>
+</html>
