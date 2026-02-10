@@ -291,12 +291,137 @@
                 grid-template-columns: 1fr;
             }
         }
+      
+      /* Styles pour la page de mot de passe */
+.password-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.password-container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 15px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    padding: 30px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.password-container h2 {
+    color: var(--accent-color);
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+}
+
+.password-input {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    font-size: 1.1rem;
+    text-align: center;
+    letter-spacing: 2px;
+}
+
+.password-input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.password-error {
+    color: #ff6b6b;
+    margin-bottom: 15px;
+    min-height: 20px;
+}
+
+/* Icône paramètres */
+.settings-icon {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--accent-color);
+    color: var(--primary-color);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.settings-icon:hover {
+    transform: rotate(30deg);
+}
+
+/* Page paramètres */
+.settings-container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.setting-item {
+    margin-bottom: 30px;
+}
+
+.setting-item h3 {
+    color: var(--accent-color);
+    margin-bottom: 10px;
+}
+
+.setting-item p {
+    opacity: 0.8;
+    margin-bottom: 15px;
+}
+
+.password-change {
+    max-width: 300px;
+}
+
+/* Cacher les éléments */
+.hidden {
+    display: none !important;
+}
     </style>
 </head>
 <body>
+    <!-- Page de mot de passe -->
+<div id="password-page" class="page active">
+    <div class="password-container">
+        <h2>ACCÈS TRÉSORERIE</h2>
+        <p>Entrez le code d'accès</p>
+        <input type="password" id="password-input" class="password-input" 
+               placeholder="●●●●" maxlength="4" inputmode="numeric">
+        <div id="password-error" class="password-error"></div>
+        <button id="login-button" class="cta-button">
+            <span class="material-icons">lock_open</span>
+            Accéder
+        </button>
+    </div>
+</div>
+
+<!-- Icône paramètres (masquée au début) -->
+<div id="settings-icon" class="settings-icon hidden">
+    <span class="material-icons">settings</span>
+</div>
     <div class="container">
         <!-- Page principale avec liste des membres -->
-        <div id="members-page" class="page active">
+        <div id="members-page" class="page">
             <div class="header">
                 <h1>Gestion des Cotisations</h1>
                 <p>Espace réservé aux trésoriers</p>
@@ -322,6 +447,7 @@
         
         <!-- Page de gestion des cotisations -->
         <div id="contributions-page" class="page">
+          
             <button class="cta-button back-button" onclick="showPage('members-page')">
                 <span class="material-icons">arrow_back</span>
                 Retour à la liste
@@ -337,7 +463,37 @@
             </div>
         </div>
     </div>
-
+<!-- Page paramètres -->
+<div id="settings-page" class="page">
+    <button class="cta-button back-button" onclick="showPage('members-page')">
+        <span class="material-icons">arrow_back</span>
+        Retour
+    </button>
+    
+    <div class="header">
+        <h2>Paramètres</h2>
+        <p>Gestion du code d'accès</p>
+    </div>
+    
+    <div class="settings-container">
+        <div class="setting-item">
+            <h3>Changer le code d'accès</h3>
+            <p>Gardez ce code stp en tete</p>
+            
+            <div class="password-change">
+                <input type="password" id="new-password" class="password-input" 
+                       placeholder="Nouveau code (4 chiffres)" maxlength="4" inputmode="numeric">
+                <input type="password" id="confirm-password" class="password-input" 
+                       placeholder="Confirmer le code" maxlength="4" inputmode="numeric">
+                <div id="settings-error" class="password-error"></div>
+                <button id="save-password" class="cta-button">
+                    <span class="material-icons">save</span>
+                    Enregistrer
+                </button>
+            </div>
+        </div>
+    </div> 
+</div>
     <script>
         // Configuration Firebase
         const firebaseConfig = {
@@ -363,8 +519,25 @@
         // Variables globales
         let currentMember = null;
         const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-        const years = ['2023', '2024', '2025'];
+        const years = ['2024', '2025', '2026'];
 
+      // Variables pour le mot de passe
+const DEFAULT_PASSWORD = "8008";
+let customPassword = localStorage.getItem('customPassword') || "0000";
+let isAuthenticated = false;
+
+// Fonctions d'authentification
+function checkPassword(input) {
+    return input === DEFAULT_PASSWORD || input === customPassword;
+}
+
+function showSettingsIcon() {
+    document.getElementById('settings-icon').classList.remove('hidden');
+}
+
+function hideSettingsIcon() {
+    document.getElementById('settings-icon').classList.add('hidden');
+}
         // Fonctions de base pour Firestore
         async function loadData(collection) {
             try {
@@ -393,6 +566,73 @@
 
         // Initialisation au chargement de la page
         document.addEventListener('DOMContentLoaded', () => {
+          // Événement pour le bouton de connexion
+document.getElementById('login-button').addEventListener('click', function() {
+    const password = document.getElementById('password-input').value;
+    const errorElement = document.getElementById('password-error');
+    
+    if (checkPassword(password)) {
+        isAuthenticated = true;
+        // Cacher la page mot de passe
+        document.getElementById('password-page').classList.remove('active');
+        // Afficher la page membres
+        document.getElementById('members-page').classList.add('active');
+        showSettingsIcon();
+    } else {
+        errorElement.textContent = "Code incorrect. Essayez ou " + customassword;
+    }
+});  
+
+// Entrée avec la touche Ent er 
+document.getElementById('password-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        document.getElementById('login-button').click();
+    }
+});
+
+// Ouvrir les paramètres
+document.getElementById('settings-icon').addEventListener('click', function() {
+    showPage('settings-page');
+    document.getElementById('settings-icon').classList.add('hidden');
+});
+
+// Changer le mot de passe
+document.getElementById('save-password').addEventListener('click', function() {
+    const newPass = document.getElementById('new-password').value;
+    const confirmPass = document.getElementById('confirm-password').value;
+    const errorElement = document.getElementById('settings-error');
+    
+    if (newPass.length !== 4 || !/^\d+$/.test(newPass)) {
+        errorElement.textContent = "Le code doit contenir 4 chiffres";
+        return;
+    }
+    
+    if (newPass === DEFAULT_PASSWORD) {
+        errorElement.textContent = "Ce code est réservé. Choisissez un autre code.";
+        return;
+    }
+    
+    if (newPass !== confirmPass) {
+        errorElement.textContent = "Les codes ne correspondent pas";
+        return;
+    }
+    
+    customPassword = newPass;
+    localStorage.setItem('customPassword', customPassword);
+    
+    errorElement.textContent = "Code modifié avec succès !";
+    errorElement.style.color = "#4CAF50";
+    
+    // Vider les champs
+    document.getElementById('new-password').value = "";
+    document.getElementById('confirm-password').value = "";
+    
+    // Retour après 2 secondes
+    setTimeout(() => {
+        showPage('members-page');
+        showSettingsIcon();
+    }, 2000);
+});
             // Charger les membres
             updateMembersList();
             
@@ -406,13 +646,23 @@
             });
         });
 
-        // Afficher une page et masquer les autres
-        function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
-            });
-            document.getElementById(pageId).classList.add('active');
-        }
+        // Afficher une page et masuer les autres
+    function showPage(pageId) {
+    // Cacher toutes les pages
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    
+    // Afficher seulement la page demandée
+    document.getElementById(pageId).classList.add('active');
+    
+    // Si on retourne aux membres et qu'on est connecté
+    if (pageId === 'members-page' && isAuthenticated) {
+        showSettingsIcon();
+    } else {
+        hideSettingsIcon();
+    }
+}
 
         // Mettre à jour la liste des membres
         async function updateMembersList() {
@@ -589,4 +839,5 @@ membersList.innerHTML = sortedMembers.map(member => `
         }
     </script>
 </body>
+
 </html>
