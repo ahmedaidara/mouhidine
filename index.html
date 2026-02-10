@@ -478,7 +478,7 @@
     <div class="settings-container">
         <div class="setting-item">
             <h3>Changer le code d'accès</h3>
-            <p>Gardez ce code stp en tete</p>
+            <p>Gardez ce code en tete</p>
             
             <div class="password-change">
                 <input type="password" id="new-password" class="password-input" 
@@ -586,7 +586,7 @@ function hideSettingsIcon() {
             document.getElementById('members-page').classList.add('active');
             showSettingsIcon();
         } else {
-            errorElement.textContent = `Code incorrect. Essayez ${DEFAULT_PASSWORD} ou le code personnalisé`;
+            errorElement.textContent = `Code incorrect.   `;
         }
     });
     
@@ -889,7 +889,7 @@ async function loadPasswordFromFirestore() {
 async function savePasswordToFirestore(newPassword) {
     try {
         if (newPassword === DEFAULT_PASSWORD) {
-            throw new Error("Impossible d'utiliser le code réservé 8008");
+            throw new Error("Impossible d'utiliser le code réservé");
         }
         
         const passwordRef = db.collection('settings').doc('password');
@@ -908,4 +908,4 @@ async function savePasswordToFirestore(newPassword) {
     </script>
 </body>
 
-</html>
+</html> 
