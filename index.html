@@ -491,7 +491,7 @@
                     Enregistrer
                 </button>
             </div>
-        </div>
+        </div> 
     </div> 
 </div>
     <script>
@@ -522,9 +522,11 @@
         const years = ['2024', '2025', '2026'];
 
       // Variables pour le mot de passe
+// Variables pour le mot de passe
 const DEFAULT_PASSWORD = "8008";
-let customPassword = localStorage.getItem('customPassword') || "0000";
+let customPassword = "0000"; // Valeur par défaut
 let isAuthenticated = false;
+let passwordDocId = null; // ID du document Firestore
 
 // Fonctions d'authentification
 function checkPassword(input) {
@@ -565,23 +567,30 @@ function hideSettingsIcon() {
         }
 
         // Initialisation au chargement de la page
-        document.addEventListener('DOMContentLoaded', () => {
-          // Événement pour le bouton de connexion
-document.getElementById('login-button').addEventListener('click', function() {
-    const password = document.getElementById('password-input').value;
-    const errorElement = document.getElementById('password-error');
+       document.addEventListener('DOMContentLoaded', async () => {
+    // Charger d'abord le mot de passe depuis Firestore
+    await loadPasswordFromFirestore();
     
-    if (checkPassword(password)) {
-        isAuthenticated = true;
-        // Cacher la page mot de passe
-        document.getElementById('password-page').classList.remove('active');
-        // Afficher la page membres
-        document.getElementById('members-page').classList.add('active');
-        showSettingsIcon();
-    } else {
-        errorElement.textContent = "Code incorrect. Essayez ou " + customassword;
-    }
-});  
+    // Ensuite charger les membres et configurer les événements
+    updateMembersList();
+    
+    // Événement pour le bouton de connexion
+    document.getElementById('login-button').addEventListener('click', async function() {
+        const password = document.getElementById('password-input').value;
+        const errorElement = document.getElementById('password-error');
+        
+        // Vérifier le mot de passe
+        if (password === DEFAULT_PASSWORD || password === customPassword) {
+            isAuthenticated = true;
+            document.getElementById('password-page').classList.remove('active');
+            document.getElementById('members-page').classList.add('active');
+            showSettingsIcon();
+        } else {
+            errorElement.textContent = `Code incorrect. Essayez ${DEFAULT_PASSWORD} ou le code personnalisé`;
+        }
+    });
+    
+    // ... reste du code existant
 
 // Entrée avec la touche Ent er 
 document.getElementById('password-input').addEventListener('keypress', function(e) {
@@ -597,13 +606,18 @@ document.getElementById('settings-icon').addEventListener('click', function() {
 });
 
 // Changer le mot de passe
-document.getElementById('save-password').addEventListener('click', function() {
+// Changer le mot de passe
+document.getElementById('save-password').addEventListener('click', async function() {
     const newPass = document.getElementById('new-password').value;
     const confirmPass = document.getElementById('confirm-password').value;
     const errorElement = document.getElementById('settings-error');
     
+    // Réinitialiser le message
+    errorElement.style.color = "#ff6b6b";
+    
+    // Validation
     if (newPass.length !== 4 || !/^\d+$/.test(newPass)) {
-        errorElement.textContent = "Le code doit contenir 4 chiffres";
+        errorElement.textContent = "Le code doit contenir exactement 4 chiffres";
         return;
     }
     
@@ -617,21 +631,29 @@ document.getElementById('save-password').addEventListener('click', function() {
         return;
     }
     
-    customPassword = newPass;
-    localStorage.setItem('customPassword', customPassword);
-    
-    errorElement.textContent = "Code modifié avec succès !";
-    errorElement.style.color = "#4CAF50";
-    
-    // Vider les champs
-    document.getElementById('new-password').value = "";
-    document.getElementById('confirm-password').value = "";
-    
-    // Retour après 2 secondes
-    setTimeout(() => {
-        showPage('members-page');
-        showSettingsIcon();
-    }, 2000);
+    try {
+        // Sauvegarder dans Firestore
+        const success = await savePasswordToFirestore(newPass);
+        
+        if (success) {
+            errorElement.textContent = "✅ Code modifié avec succès !";
+            errorElement.style.color = "#4CAF50";
+            
+            // Vider les champs
+            document.getElementById('new-password').value = "";
+            document.getElementById('confirm-password').value = "";
+            
+            // Retour après 2 secondes
+            setTimeout(() => {
+                showPage('members-page');
+                showSettingsIcon();
+            }, 2000);
+        } else {
+            errorElement.textContent = "❌ Erreur lors de la sauvegarde";
+        }
+    } catch (error) {
+        errorElement.textContent = "❌ Erreur: " + error.message;
+    }
 });
             // Charger les membres
             updateMembersList();
@@ -837,6 +859,52 @@ membersList.innerHTML = sortedMembers.map(member => `
                 alert('Erreur lors de la sauvegarde des cotisations');
             }
         }
+      
+      // Charger le mot de passe depuis Firestore
+async function loadPasswordFromFirestore() {
+    try {
+        const passwordRef = db.collection('settings').doc('password');
+        const doc = await passwordRef.get();
+        
+        if (doc.exists) {
+            const data = doc.data();
+            customPassword = data.password || "0000";
+            passwordDocId = doc.id;
+        } else {
+            // Créer le document avec le mot de passe par défaut
+            await passwordRef.set({
+                password: "0000",
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            customPassword = "0000";
+            passwordDocId = 'password';
+        }
+    } catch (error) {
+        console.error('Erreur chargement mot de passe:', error);
+        customPassword = "0000";
+    }
+}
+      
+      // Sauvegarder le mot de passe dans Firestore
+async function savePasswordToFirestore(newPassword) {
+    try {
+        if (newPassword === DEFAULT_PASSWORD) {
+            throw new Error("Impossible d'utiliser le code réservé 8008");
+        }
+        
+        const passwordRef = db.collection('settings').doc('password');
+        await passwordRef.set({
+            password: newPassword,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        
+        customPassword = newPassword;
+        return true;
+    } catch (error) {
+        console.error('Erreur sauvegarde mot de passe:', error);
+        return false;
+    }
+}
     </script>
 </body>
 
