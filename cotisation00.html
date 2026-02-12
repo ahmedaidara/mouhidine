@@ -1008,6 +1008,10 @@
         <!-- Panel Cotisations -->
         <div class="content-panel" id="cotisationsPanel">
             <button class="back-btn" onclick="backToMain()"><i class="fas fa-arrow-left"></i></button>
+          <button onclick="loadMembers();" 
+                style="background: var(--accent-color); border: none; border-radius: 8px; padding: 10px 15px; color: white; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+            <i class="fas fa-sync-alt"></i> Rafraîchir
+        </button>
             <h2 class="panel-header">GESTION DES COTISATIONS</h2>
             
            <div class="years-container">
@@ -1162,7 +1166,7 @@
         let allMembers = [];
         
         // Charger les membres depuis Firebase
-       async function loadMembers() {
+     async function loadMembers() {
     try {
         const snapshot = await db.collection("members").get();
         members = [];
@@ -1174,12 +1178,11 @@
                 firstname: memberData.firstname || "",
                 lastname: memberData.lastname || "",
                 code: memberData.code || "",
-                contributions: formatContributions(memberData.contributions) // Conversion du format
+                contributions: formatContributions(memberData.contributions)
             };
             members.push(member);
         });
         
-        // Trier par ordre alphabétique
         members.sort((a, b) => {
             const nameA = `${a.firstname} ${a.lastname}`.toUpperCase();
             const nameB = `${b.firstname} ${b.lastname}`.toUpperCase();
@@ -1188,7 +1191,7 @@
         
         allMembers = [...members];
         
-        console.log("Membres chargés:", members); // Debug
+        console.log("Membres chargés:", members);
         
         // Charger l'affichage public s'il existe
         const publicDisplay = localStorage.getItem('publicDisplay');
@@ -1196,6 +1199,10 @@
             const data = JSON.parse(publicDisplay);
             displayPublicMembers(data.year, data.month);
         }
+        
+        // 👇 AJOUTE CETTE LIGNE ICI 👇
+        listenToMemberChanges();
+        
     } catch (error) {
         console.error("Erreur de chargement des membres:", error);
     }
@@ -1264,12 +1271,19 @@ function hasMemberPaid(member, year, month) {
         }
         
         // Retour au menu principal
-        function backToMain() {
-            document.getElementById('cotisationsPanel').style.display = 'none';
-            document.getElementById('membersByPersonPanel').style.display = 'none';
-            document.getElementById('memberDetailPanel').style.display = 'none';
-            document.getElementById('mainMenu').style.display = 'block';
-        }
+     function backToMain() {
+    document.getElementById('cotisationsPanel').style.display = 'none';
+    document.getElementById('membersByPersonPanel').style.display = 'none';
+    document.getElementById('memberDetailPanel').style.display = 'none';
+    document.getElementById('resultsPanel').style.display = 'none';
+    document.getElementById('mainMenu').style.display = 'block';
+    
+    // 👇 AJOUTE CETTE LIGNE 👇
+    refreshPublicDisplay(); // Rafraîchir l'affichage public
+    
+    // Toujours afficher l'écran public
+    document.getElementById('publicDisplay').style.display = 'block';
+}
         
         // Retour à la liste des membres
         function backToMembersList() {
@@ -2410,6 +2424,38 @@ function generatePDFContent() {
 function getCurrentMonthName() {
     const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
     return monthNames[currentMonth];
+}
+      
+      // ÉCOUTEUR EN TEMPS RÉEL POUR LES MODIFICATIONS FIRESTORE
+function listenToMemberChanges() {
+    db.collection("members").onSnapshot((snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "modified" || change.type === "added") {
+                console.log("Modification détectée ! Rechargement des données...");
+                loadMembers(); // Recharger les membres
+                
+                // Si on est sur une page de cotisations, rafraîchir l'affichage
+                if (document.getElementById('cotisationsPanel').style.display === 'block') {
+                    if (currentYear && currentMonth !== null) {
+                        showMembersForMonth();
+                    }
+                }
+                
+                // Si on est sur la page d'un membre, rafraîchir ses détails
+                if (document.getElementById('memberDetailPanel').style.display === 'block' && currentMember) {
+                    showMemberDetail(currentMember);
+                }
+            }
+        });
+    });
+}
+      // RAFRAÎCHIR L'AFFICHAGE PUBLIC
+function refreshPublicDisplay() {
+    const publicDisplay = localStorage.getItem('publicDisplay');
+    if (publicDisplay) {
+        const data = JSON.parse(publicDisplay);
+        displayPublicMembers(data.year, data.month);
+    }
 }
     </script>
   <!-- Contenu caché pour la génération du PDF -->
