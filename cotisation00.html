@@ -1010,11 +1010,13 @@
             <button class="back-btn" onclick="backToMain()"><i class="fas fa-arrow-left"></i></button>
             <h2 class="panel-header">GESTION DES COTISATIONS</h2>
             
-            <div class="years-container">
-                <button class="year-btn" onclick="selectYear(2023)">2023</button>
-                <button class="year-btn" onclick="selectYear(2024)">2024</button>
-                <button class="year-btn" onclick="selectYear(2025)">2025</button>
-            </div>
+           <div class="years-container">
+    <button class="year-btn" onclick="selectYear(2023)">2023</button>
+    <button class="year-btn" onclick="selectYear(2024)">2024</button>
+    <button class="year-btn" onclick="selectYear(2025)">2025</button>
+    <button class="year-btn" onclick="selectYear(2026)">2026</button>
+    <button class="year-btn" onclick="selectYear(2027)">2027</button>
+</div>
             
             <div class="months-container" id="monthsContainer"></div>
             
@@ -1040,11 +1042,13 @@
                 <div class="member-detail-code" id="memberDetailCode"></div>
             </div>
             
-            <div class="member-years-container">
-                <button class="member-year-btn" onclick="selectMemberYear(2023)">2023</button>
-                <button class="member-year-btn" onclick="selectMemberYear(2024)">2024</button>
-                <button class="member-year-btn" onclick="selectMemberYear(2025)">2025</button>
-            </div>
+           <div class="member-years-container">
+    <button class="member-year-btn" onclick="selectMemberYear(2023)">2023</button>
+    <button class="member-year-btn" onclick="selectMemberYear(2024)">2024</button>
+    <button class="member-year-btn" onclick="selectMemberYear(2025)">2025</button>
+    <button class="member-year-btn" onclick="selectMemberYear(2026)">2026</button>
+    <button class="member-year-btn" onclick="selectMemberYear(2027)">2027</button>
+</div>
             
             <div class="member-months-container" id="memberMonthsContainer"></div>
         </div>
@@ -1090,10 +1094,12 @@
         
         <div class="month-selector">
             <select id="yearSelect">
-                <option value="2023">2023</option>
-                <option value="2024">2024</option>
-                <option value="2025">2025</option>
-            </select>
+    <option value="2023">2023</option>
+    <option value="2024">2024</option>
+    <option value="2025">2025</option>
+    <option value="2026">2026</option>
+    <option value="2027">2027</option>
+</select>
             <select id="monthSelect">
                 <option value="0">Janvier</option>
                 <option value="1">Février</option>
@@ -2115,8 +2121,8 @@ function closePasswordPanel() {
                 errorElement.style.display = 'block';
             }
         }
-        
-        // Fermer le panel admin
+         
+        // Fermer le panel admi
         function closeAdminPanel() {
             document.getElementById('adminPanel').style.display = 'none';
         }
